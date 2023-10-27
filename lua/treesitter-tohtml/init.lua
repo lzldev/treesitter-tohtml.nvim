@@ -58,10 +58,9 @@ M.GenerateHTML = function()
   ]] .. css .. [[
       </style>
     </head>
-    <body>
-    <pre>
-  ]] .. body .. [[
-    </pre>
+    <body class="Normal">
+    <code><pre>]] .. '\n' .. body .. [[
+    </pre></code>
     </body>
   </html>
   ]]
@@ -83,14 +82,15 @@ function mysplit(inputstr, sep)
 end
 
 M.TOHtml = function()
-  local name = vim.api.nvim_buf_get_name(vim.api.nvim_get_current_buf()) .. ".html"
+  local name = vim.api.nvim_buf_get_name(vim.api.nvim_get_current_buf())
+    .. '.html'
   local content = mysplit(M.GenerateHTML(), '\n')
 
   local new_buf = vim.api.nvim_create_buf(true, false)
   -- vim.api.nvim_buf_set_text(newb, 0, 0, 0, 0, { content })
 
-  vim.api.nvim_buf_set_name(new_buf,name)
-  vim.api.nvim_buf_set_lines(new_buf,0,0,false,content)
+  vim.api.nvim_buf_set_name(new_buf, name)
+  vim.api.nvim_buf_set_lines(new_buf, 0, 0, false, content)
 end
 
 local __default = {}

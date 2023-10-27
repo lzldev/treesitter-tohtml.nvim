@@ -26,10 +26,10 @@ M.map_hi = function()
       classes[root] = { his = { root } }
 
       if not not values.bg then
-        classes[root].bg = '#' .. string.format('%x', values.bg)
+        classes[root].bg = M.int_to_hex(values.bg)
       end
       if not not values.fg then
-        classes[root].fg = '#' .. string.format('%x', values.fg)
+        classes[root].fg = M.int_to_hex(values.fg)
       end
 
       if not not values.bold then
@@ -37,7 +37,7 @@ M.map_hi = function()
       end
 
       if not not values.italics then
-        classes[root].bold = values.bold
+        classes[root].bold = values.italics
       end
     else
       table.insert(classes[root].his, highlight)
@@ -57,11 +57,11 @@ M.hi_map_to_css = function(hi_table)
     final_css = final_css .. c .. ' {\n'
 
     if not not highlight.bg then
-      final_css = final_css .. 'background: "' .. highlight.bg .. '";\n'
+      final_css = final_css .. 'background: ' .. highlight.bg .. ';\n'
     end
 
     if not not highlight.fg then
-      final_css = final_css .. 'color: "' .. highlight.fg .. '";\n'
+      final_css = final_css .. 'color: ' .. highlight.fg .. ';\n'
     end
 
     if not not highlight.bold then
@@ -72,6 +72,11 @@ M.hi_map_to_css = function(hi_table)
   end
 
   return final_css
+end
+
+M.int_to_hex = function(int)
+  local fmt = string.format('%x',int)
+  return "#"..string.rep('0',6-string.len(fmt))..fmt
 end
 
 return M
