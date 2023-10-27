@@ -1,18 +1,6 @@
 local M = {}
 
-local get_root_class
-get_root_class = function(cur_name, table)
-  if not not table[cur_name].link then
-    if table[table[cur_name].link] == nil then
-      return nil
-    end
-    return get_root_class(table[cur_name].link, table)
-  end
-
-  return cur_name
-end
-
-local map_hi = function(buf)
+M.map_hi = function(buf)
   local hi_table = vim.api.nvim_get_hl(buf, {})
   local classes = {}
 
@@ -21,7 +9,7 @@ local map_hi = function(buf)
       goto continue
     end
 
-    local root = get_root_class(highlight, hi_table)
+    local root = require("treesitter-tohtml.utils").get_root_class(highlight, hi_table)
 
     if root == nil then
       goto continue
@@ -73,8 +61,8 @@ local hi_map_to_css = function(hi_table)
   return final_css
 end
 
-local generate_tag
-generate_tag = function(buf, node)
+
+M.parse_tree = function(buf, node)
   if node:child_count() == 0 then
     local text = vim.treesitter.get_node_text(node, buf)
     return text
@@ -107,9 +95,9 @@ generate_tag = function(buf, node)
   return ret
 end
 
-local node_tree_tohtml = function(buf)
+M.node_tree_tohtml = function(buf)
   local root = vim.treesitter.get_node({ bufnr = buf }):tree():root()
-  return generate_tag(buf, root)
+  return M.parse_tree(buf, root)
 end
 
 M.printHI = function()
@@ -117,8 +105,8 @@ M.printHI = function()
   -- vim.print(vim.inspect(classes))
   -- vim.print(get_css(classes))
 
-  local hi_map = map_hi(buf)
-  local code = node_tree_tohtml(buf)
+  local hi_map = M.map_hi(buf)
+  local code = M.node_tree_tohtml(buf)
 
   vim.print(code)
 end
