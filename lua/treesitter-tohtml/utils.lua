@@ -1,15 +1,9 @@
 local M = {}
 
+-- traverse links in hi table
 M.get_root_class = function(cur_name, hi_table, walked)
-  
   -- avoids infinite loops
-  if walked ~= nil then
-    for _, v in ipairs(walked) do
-      if v == cur_name then
-        return nil
-      end
-    end
-
+  if walked ~= nil and vim.tbl_contains(walked,cur_name)then
     table.insert(walked,cur_name)
   elseif walked == nil then
     walked = { cur_name }
