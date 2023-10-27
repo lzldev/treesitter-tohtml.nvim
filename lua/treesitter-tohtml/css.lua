@@ -5,6 +5,10 @@ M.hi_TOCSS = function()
   return M.hi_map_to_css(M.map_hi())
 end
 
+M.hi_group_to_class = function(hl_group_name)
+  return string.gsub(hl_group_name, '@', '')
+end
+
 -- map hightlights into a table following links
 M.map_hi = function()
   local hi_table = vim.api.nvim_get_hl(0, {})
@@ -23,24 +27,29 @@ M.map_hi = function()
     end
 
     if not classes[root] then
-      classes[root] = { his = { root } }
+      local hi_to_class = M.hi_group_to_class(highlight)
 
-      if not not values.bg then
+      classes[root] = { his = { hi_to_class } }
+
+      if type(values.bg) == 'number' then
         classes[root].bg = M.int_to_hex(values.bg)
       end
-      if not not values.fg then
+
+      if type(values.fg) == 'number' then
         classes[root].fg = M.int_to_hex(values.fg)
       end
 
-      if not not values.bold then
+      if type(values.bold) == 'boolean' then
         classes[root].bold = values.bold
       end
 
-      if not not values.italics then
+      if type(values.italics) == 'boolean' then
         classes[root].bold = values.italics
       end
     else
-      table.insert(classes[root].his, highlight)
+      local hi_to_class = M.hi_group_to_class(highlight)
+
+      table.insert(classes[root].his, hi_to_class)
     end
     ::continue::
   end
@@ -56,16 +65,20 @@ M.hi_map_to_css = function(hi_table)
 
     final_css = final_css .. c .. ' {\n'
 
-    if not not highlight.bg then
+    if highlight.bg ~= nil then
       final_css = final_css .. 'background: ' .. highlight.bg .. ';\n'
     end
 
-    if not not highlight.fg then
+    if highlight.fg ~= nil then
       final_css = final_css .. 'color: ' .. highlight.fg .. ';\n'
     end
 
-    if not not highlight.bold then
+    if highlight.bold ~= nil then
       final_css = final_css .. 'font-weight: bold;\n'
+    end
+
+    if highlight.bold ~= nil then
+      final_css = final_css .. 'font-style; italic;\n'
     end
 
     final_css = final_css .. '}\n'
@@ -75,8 +88,8 @@ M.hi_map_to_css = function(hi_table)
 end
 
 M.int_to_hex = function(int)
-  local fmt = string.format('%x',int)
-  return "#"..string.rep('0',6-string.len(fmt))..fmt
+  local fmt = string.format('%x', int)
+  return '#' .. string.rep('0', 6 - string.len(fmt)) .. fmt
 end
 
 return M

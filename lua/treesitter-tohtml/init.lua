@@ -3,7 +3,40 @@ local M = {}
 M.TSNode_tohtml = function(buf, node)
   if node:child_count() == 0 then
     local text = vim.treesitter.get_node_text(node, buf)
-    return '<span>' .. text .. '</span>'
+    local row, collumn = node:start()
+
+    local inspect = vim.inspect_pos(
+      buf,
+      row,
+      collumn,
+      { semantic_tokens = true, treesitter = true }
+    )
+
+    -- extmarks has a higher priority
+    local ts_high = ''
+    local token = ''
+
+    if vim.tbl_count(inspect.semantic_tokens) > 0 then
+      local highest = -99999
+      local highest_value = nil
+      for _, v in ipairs(inspect.semantic_tokens) do
+        if v.opts.priority > highest then
+          highest_value = v.opts.hl_group_link
+        end
+      end
+
+      token = token
+        .. require('treesitter-tohtml.css').hi_group_to_class(highest_value)
+    elseif vim.tbl_count(inspect.treesitter) > 0 then
+      for _, ts_group in ipairs(inspect.treesitter) do
+        local highlight = ts_group.hl_group_link
+        token = token
+          .. ' '
+          .. require('treesitter-tohtml.css').hi_group_to_class(highlight)
+      end
+    end
+
+    return '<span class="' .. ts_high .. token .. '">' .. text .. '</span>'
   end
 
   local ret = ''
@@ -19,7 +52,7 @@ M.TSNode_tohtml = function(buf, node)
       end
 
       if erow < srow then
-        ret = ret .. string.rep('\n', srow - erow) .. string.rep('-', scol)
+        ret = ret .. string.rep('\n', srow - erow) .. string.rep(' ', scol)
       end
     end
 
@@ -84,8 +117,9 @@ end
 M.TOHtml = function()
   local name = vim.api.nvim_buf_get_name(vim.api.nvim_get_current_buf())
     .. '.html'
-  local content = mysplit(M.GenerateHTML(), '\n')
 
+  -- refactor GenerateHTML to  Return an String array
+  local content = mysplit(M.GenerateHTML(), '\n')
   local new_buf = vim.api.nvim_create_buf(true, false)
   -- vim.api.nvim_buf_set_text(newb, 0, 0, 0, 0, { content })
 
