@@ -11,7 +11,11 @@ M.int_to_hex = function(int)
 end
 
 M.hi_group_to_class = function(hl_group_name)
-  return string.gsub(hl_group_name, '[@,.]', '_')
+  local r = '_'
+  for i = 1, #hl_group_name do
+    r = r .. string.format("%2x",string.byte(hl_group_name, i))
+  end
+  return r
 end
 
 -- map hightlights into a table following links
@@ -32,9 +36,7 @@ M.map_hi = function()
     end
 
     if not classes[root] then
-      local hi_to_class = M.hi_group_to_class(highlight)
-
-      classes[root] = { his = { hi_to_class } }
+      classes[root] = { his = { M.hi_group_to_class(highlight) } }
 
       if type(values.bg) == 'number' then
         classes[root].bg = M.int_to_hex(values.bg)
@@ -52,9 +54,7 @@ M.map_hi = function()
         classes[root].bold = values.italics
       end
     else
-      local hi_to_class = M.hi_group_to_class(highlight)
-
-      table.insert(classes[root].his, hi_to_class)
+      table.insert(classes[root].his, M.hi_group_to_class(highlight))
     end
     ::continue::
   end
@@ -63,33 +63,47 @@ end
 
 -- generate css from highlight map
 M.hi_map_to_css = function(hi_table)
+  local variables = 'html{\n'
   local final_css = ''
 
-  for _, highlight in pairs(hi_table) do
-    local c = '.' .. table.concat(highlight.his, ',.')
-
-    final_css = final_css .. c .. ' {\n'
+  for root, highlight in pairs(hi_table) do
+    local class_body = ''
+    local rr = M.hi_group_to_class(root)
 
     if highlight.bg ~= nil then
-      final_css = final_css .. 'background: ' .. highlight.bg .. ';\n'
+      variables = variables .. '/*' .. root .. ' */'
+      variables = variables .. '--' .. rr .. '_bg: ' .. highlight.bg .. ';\n'
+      class_body = class_body .. 'background: var(--' .. rr .. '_bg);\n'
     end
 
     if highlight.fg ~= nil then
-      final_css = final_css .. 'color: ' .. highlight.fg .. ';\n'
+      variables = variables .. '/*' .. root .. ' */'
+      variables = variables .. '--' .. rr .. '_fg: ' .. highlight.fg .. ';\n'
+      class_body = class_body .. 'color: var(--' .. rr .. '_fg);\n'
     end
 
     if highlight.bold ~= nil then
-      final_css = final_css .. 'font-weight: bold;\n'
+      -- class_body = class_body .. 'font-weight: bold;\n'
     end
 
     if highlight.bold ~= nil then
-      final_css = final_css .. 'font-style; italic;\n'
+      -- class_body = class_body .. 'font-style; italic;\n'
     end
 
-    final_css = final_css .. '}\n'
+    --generate a class for each high in group
+    local clses = table.concat(
+      vim.tbl_map(function(value)
+        return '.' .. value .. '{\n' .. class_body .. '}\n'
+      end, highlight.his),
+      '\n'
+    )
+
+    final_css = final_css .. clses
+
+    -- final_css = final_css .. '}\n'
   end
 
-  return final_css
+  return variables .. final_css
 end
 
 return M

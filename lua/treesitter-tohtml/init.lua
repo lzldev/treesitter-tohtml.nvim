@@ -1,5 +1,17 @@
 local M = {}
 
+M.get_TSToken = function(token_list)
+  local highest = -99999
+  local highest_value = nil
+
+  for _, v in ipairs(token_list) do
+    if v.opts.priority > highest then
+      highest_value = v.opts.hl_group_link
+    end
+  end
+  return require("treesitter-tohtml.css").hi_group_to_class(highest_value)
+end
+
 M.TSNode_tohtml = function(buf, node)
   if node:child_count() == 0 then
     local text = vim.treesitter.get_node_text(node, buf)
@@ -16,17 +28,12 @@ M.TSNode_tohtml = function(buf, node)
     local ts_high = ''
     local token = ''
 
-    if vim.tbl_count(inspect.semantic_tokens) > 0 then
-      local highest = -99999
-      local highest_value = nil
-      for _, v in ipairs(inspect.semantic_tokens) do
-        if v.opts.priority > highest then
-          highest_value = v.opts.hl_group_link
-        end
-      end
+    if vim.tbl_count(inspect.extmarks) > 0 then
+      token = token .. M.get_TSToken(inspect.extmarks)
+    end
 
-      token = token
-        .. require('treesitter-tohtml.css').hi_group_to_class(highest_value)
+    if vim.tbl_count(inspect.semantic_tokens) > 0 then
+      token = token .. M.get_TSToken(inspect.semantic_tokens)
     elseif vim.tbl_count(inspect.treesitter) > 0 then
       for _, ts_group in ipairs(inspect.treesitter) do
         local highlight = ts_group.hl_group_link
@@ -36,10 +43,12 @@ M.TSNode_tohtml = function(buf, node)
       end
     end
 
+    -- return { text }
     return '<span class="' .. ts_high .. token .. '">' .. text .. '</span>'
   end
 
   local ret = ''
+
   for child in node:iter_children() do
     local prev = child:prev_sibling()
 
@@ -52,6 +61,7 @@ M.TSNode_tohtml = function(buf, node)
       end
 
       if erow < srow then
+        -- require('treesitter-tohtml.utils').fill_list ' '
         ret = ret .. string.rep('\n', srow - erow) .. string.rep(' ', scol)
       end
     end
@@ -91,7 +101,7 @@ M.GenerateHTML = function()
   ]] .. css .. [[
       </style>
     </head>
-    <body class="Normal">
+    <body class="]] .. require('treesitter-tohtml.css').hi_group_to_class 'Normal' .. [[">
     <code><pre>]] .. '\n' .. body .. [[
     </pre></code>
     </body>
@@ -103,15 +113,14 @@ M.TOPrintHTML = function()
   vim.print(M.GenerateHTML())
 end
 
-
 -- returns new buf number
 M.TOHtml = function()
   local name = vim.api.nvim_buf_get_name(vim.api.nvim_get_current_buf())
     .. '.html'
 
-  for _,v in ipairs(vim.api.nvim_list_bufs()) do
+  for _, v in ipairs(vim.api.nvim_list_bufs()) do
     if vim.api.nvim_buf_get_name(v) == name then
-      vim.api.nvim_buf_delete(v,{force = true})
+      vim.api.nvim_buf_delete(v, { force = true })
       break
     end
   end
@@ -131,15 +140,24 @@ local __default = {}
 
 M.setup = function(opts)
   M.config = vim.tbl_deep_extend('force', __default, opts)
+  vim.api.nvim_create_user_command('TSTOHtml', function(command_args)
+    if not command_args['bang'] then
+      M.TOHtml()
+    else
+      M.TOPrintHTML()
+    end
+  end, {
+    bang = true,
+  })
 end
 
 M.__debug = function()
-  vim.api.nvim_win_set_buf(vim.api.nvim_get_current_win(),M.TOHtml())
+  vim.api.nvim_win_set_buf(vim.api.nvim_get_current_win(), M.TOHtml())
 end
 
 M.__debugW = function()
-  vim.api.nvim_win_set_buf(vim.api.nvim_get_current_win(),M.TOHtml())
-  vim.cmd("w! ~/test.html")
+  vim.api.nvim_win_set_buf(vim.api.nvim_get_current_win(), M.TOHtml())
+  vim.cmd 'w! ~/test.html'
 end
 
 return M
