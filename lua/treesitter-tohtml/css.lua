@@ -5,8 +5,13 @@ M.hi_TOCSS = function()
   return M.hi_map_to_css(M.map_hi())
 end
 
+M.int_to_hex = function(int)
+  local fmt = string.format('%x', int)
+  return '#' .. string.rep('0', 6 - string.len(fmt)) .. fmt
+end
+
 M.hi_group_to_class = function(hl_group_name)
-  return string.gsub(hl_group_name, '@', '')
+  return string.gsub(hl_group_name, '[@,.]', '_')
 end
 
 -- map hightlights into a table following links
@@ -85,11 +90,6 @@ M.hi_map_to_css = function(hi_table)
   end
 
   return final_css
-end
-
-M.int_to_hex = function(int)
-  local fmt = string.format('%x', int)
-  return '#' .. string.rep('0', 6 - string.len(fmt)) .. fmt
 end
 
 return M
