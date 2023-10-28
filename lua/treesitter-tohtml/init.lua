@@ -103,34 +103,43 @@ M.TOPrintHTML = function()
   vim.print(M.GenerateHTML())
 end
 
-function mysplit(inputstr, sep)
-  if sep == nil then
-    sep = '%s'
-  end
-  local t = {}
-  for str in string.gmatch(inputstr, '([^' .. sep .. ']+)') do
-    table.insert(t, str)
-  end
-  return t
-end
 
+-- returns new buf number
 M.TOHtml = function()
   local name = vim.api.nvim_buf_get_name(vim.api.nvim_get_current_buf())
     .. '.html'
 
+  for _,v in ipairs(vim.api.nvim_list_bufs()) do
+    if vim.api.nvim_buf_get_name(v) == name then
+      vim.api.nvim_buf_delete(v,{force = true})
+      break
+    end
+  end
+
   -- refactor GenerateHTML to  Return an String array
-  local content = mysplit(M.GenerateHTML(), '\n')
+  local content = vim.split(M.GenerateHTML(), '\n')
   local new_buf = vim.api.nvim_create_buf(true, false)
   -- vim.api.nvim_buf_set_text(newb, 0, 0, 0, 0, { content })
 
   vim.api.nvim_buf_set_name(new_buf, name)
   vim.api.nvim_buf_set_lines(new_buf, 0, 0, false, content)
+
+  return new_buf
 end
 
 local __default = {}
 
 M.setup = function(opts)
   M.config = vim.tbl_deep_extend('force', __default, opts)
+end
+
+M.__debug = function()
+  vim.api.nvim_win_set_buf(vim.api.nvim_get_current_win(),M.TOHtml())
+end
+
+M.__debugW = function()
+  vim.api.nvim_win_set_buf(vim.api.nvim_get_current_win(),M.TOHtml())
+  vim.cmd("w! ~/test.html")
 end
 
 return M
