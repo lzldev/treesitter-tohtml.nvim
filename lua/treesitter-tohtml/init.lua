@@ -1,15 +1,16 @@
 local M = {}
 
 M.get_TSToken = function(token_list)
-  local highest = -99999
+  local highest = -999999
   local highest_value = nil
 
   for _, v in ipairs(token_list) do
     if v.opts.priority > highest then
+      highest = v.opts.priority
       highest_value = v.opts.hl_group_link
     end
   end
-  return require("treesitter-tohtml.css").hi_group_to_class(highest_value)
+  return require('treesitter-tohtml.css').hi_group_to_class(highest_value)
 end
 
 M.TSNode_tohtml = function(buf, node)
@@ -29,7 +30,7 @@ M.TSNode_tohtml = function(buf, node)
     local token = ''
 
     if vim.tbl_count(inspect.extmarks) > 0 then
-      token = token .. M.get_TSToken(inspect.extmarks)
+      ts_high = token .. M.get_TSToken(inspect.extmarks)
     end
 
     if vim.tbl_count(inspect.semantic_tokens) > 0 then
@@ -43,8 +44,12 @@ M.TSNode_tohtml = function(buf, node)
       end
     end
 
-    -- return { text }
-    return '<span class="' .. ts_high .. token .. '">' .. text .. '</span>'
+    return '<span class="'
+      .. ts_high
+      .. token
+      .. '">'
+      .. require('treesitter-tohtml.utils').escape_html(text)
+      .. '</span>'
   end
 
   local ret = ''
@@ -62,7 +67,15 @@ M.TSNode_tohtml = function(buf, node)
 
       if erow < srow then
         -- require('treesitter-tohtml.utils').fill_list ' '
-        ret = ret .. string.rep('\n', srow - erow) .. string.rep(' ', scol)
+
+        if M.config and M.config.line_numbers then
+          ret = ret
+            .. '\n'
+            .. require('treesitter-tohtml.utils').lineN_span(erow, srow, '\n')
+            .. string.rep(' ', scol)
+        else
+          ret = ret .. string.rep('\n', srow - erow) .. string.rep(' ', scol)
+        end
       end
     end
 
@@ -98,6 +111,14 @@ M.GenerateHTML = function()
   ]] .. buf_name .. [[
       </title>
       <style>
+        .ln{
+          display:inline-block;
+          text-align:end;
+          margin-right:10px;
+          padding-right:4px;
+          border-right:1px solid rgba(255,255,255,0.4);
+          min-width:1rem;
+        }
   ]] .. css .. [[
       </style>
     </head>

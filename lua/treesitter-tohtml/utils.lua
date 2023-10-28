@@ -27,4 +27,49 @@ M.fill_list = function(value, size)
   return list
 end
 
+local html_escape_map = {
+  ['&'] = '&amp;',
+  ['<'] = '&lt;',
+  ['>'] = '&gt;',
+  ['"'] = '&quot;',
+  ["'"] = '&#39;',
+}
+
+M.escape_html = function(str)
+  return string.gsub(str, '[&<>"\']', function(c)
+    return html_escape_map[c]
+  end)
+end
+
+M.lineN_span = function(start, end_, separator, end_separator, extra_class)
+  local ret = ''
+
+  if not extra_class then
+    extra_class = ''
+  end
+  if not separator then
+    separator = ''
+  end
+
+  for i = start, end_-1 do
+    local ii = i + 2
+
+    if i == end_-1 and not end_separator then
+      separator = ''
+    end
+
+    ret = ret
+      .. '<span id="ln'
+      .. ii
+      .. '" class="ln '
+      .. extra_class
+      .. '">'
+      .. ii
+      .. '</span>'
+      .. separator
+  end
+
+  return ret
+end
+
 return M
